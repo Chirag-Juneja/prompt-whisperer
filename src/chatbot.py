@@ -5,11 +5,13 @@ from typing_extensions import TypedDict
 
 from langgraph.graph import StateGraph, START
 from langgraph.graph.message import add_messages
-
-from langchain.chat_models import init_chat_model
-from langchain_community.tools import DuckDuckGoSearchResults
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.types import Command, interrupt
+
+from langchain_core.tools import tool
+from langchain.chat_models import init_chat_model
+from langchain_community.tools import DuckDuckGoSearchResults
 
 # Globals
 MODEL = "qwen3:4b"
@@ -23,7 +25,15 @@ memory = MemorySaver()
 search = DuckDuckGoSearchResults(
     region="in-en", max_results=3, output_format="json")
 
-tools = [search]
+
+@tool
+def human_assistance(query: str):
+    """Request assistance from a human"""
+    human_response = interrupt({"query": query})
+    return human_response["data"]
+
+
+tools = [search, human_assistance]
 
 
 # LLM
